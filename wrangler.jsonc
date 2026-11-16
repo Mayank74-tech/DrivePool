@@ -1,0 +1,28 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "drivepool",
+  "main": "src/index.js",
+  "compatibility_date": "2025-09-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  // Holds the connected accounts. Left without an id on purpose: the first
+  // `npm run deploy` creates the namespace and fills the id in.
+  "kv_namespaces": [
+    {
+      "binding": "KV"
+    }
+  ],
+  // Limits sign-in attempts to 10 a minute per address.
+  "ratelimits": [
+    {
+      "name": "LOGIN_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

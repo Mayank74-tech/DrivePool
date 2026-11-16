@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>DrivePool</title>
+  <meta name="theme-color" content="#f5f6f8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0e1014" media="(prefers-color-scheme: dark)">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main id="login" class="login" hidden>
+    <form id="login-form" class="login-card">
+      <img src="/icon.svg" alt="" width="56" height="56">
+      <h1>DrivePool</h1>
+      <p class="muted" id="login-hint">All your Google Drive space in one place.</p>
+      <label class="field">
+        <span>Password</span>
+        <input id="login-pw" type="password" autocomplete="current-password" required>
+      </label>
+      <p class="error" id="login-error" role="alert" hidden></p>
+      <button class="btn primary" id="login-btn" type="submit">Sign in</button>
+    </form>
+  </main>
+
+  <div id="shell" class="shell" hidden>
+    <header class="topbar">
+      <a class="brand" href="/" id="home-link">
+        <img src="/icon.svg" alt="" width="28" height="28">
+        <span>DrivePool</span>
+      </a>
+      <label class="search">
+        <span class="search-icon" id="search-icon"></span>
+        <input id="search" type="search" placeholder="Search all accounts" autocomplete="off" aria-label="Search all accounts">
+      </label>
+      <button class="btn storage-toggle" id="storage-toggle" type="button" aria-controls="sidebar"></button>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar" id="sidebar" aria-label="Storage"></aside>
+      <div class="backdrop" id="backdrop"></div>
+      <section class="main" aria-label="Files">
+        <nav class="crumbs" id="crumbs" aria-label="Folder path"></nav>
+        <div class="toolbar" id="toolbar"></div>
+        <div id="notices"></div>
+        <div class="list-head" id="list-head"></div>
+        <div class="list" id="list"></div>
+      </section>
+    </div>
+  </div>
+
+  <input type="file" id="file-input" multiple hidden>
+  <div class="drop" id="drop" hidden><div>Drop files to upload here</div></div>
+  <section class="uploads" id="uploads" aria-label="Uploads" hidden></section>
+  <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+  <dialog class="dialog" id="dlg"></dialog>
+  <dialog class="dialog preview" id="preview"></dialog>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

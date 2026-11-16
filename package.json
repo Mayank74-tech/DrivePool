@@ -1,0 +1,14 @@
+{
+  "name": "drivepool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One web app over several Google Drive accounts: pooled storage, one file list, uploads go to the account with the most free space.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

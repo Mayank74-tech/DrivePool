@@ -1,0 +1,9 @@
+# Copy this file to ".dev.vars" and fill it in to run DrivePool on your own PC.
+# (.dev.vars is ignored by git. Never share it.)
+
+# The password you will type to open DrivePool. Make it long.
+APP_PASSWORD=choose-a-long-password
+
+# From Google Cloud Console > Google Auth Platform > Clients (see README.md)
+GOOGLE_CLIENT_ID=xxxxxxxx.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=xxxxxxxx
