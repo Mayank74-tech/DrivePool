@@ -72,6 +72,48 @@ On your phone, open the address in Chrome or Safari and choose **Add to Home scr
 
 If `npm run deploy` complains that the KV namespace has no id, run `npx wrangler kv namespace create KV`, copy the id it prints into `wrangler.jsonc` as `"id": "..."` next to `"binding": "KV"`, and deploy again.
 
+## Using it
+
+Files open in a thumbnail view that works like a desktop file manager. The buttons above the list switch between thumbnails and a details list, change the sort order, and set the thumbnail size.
+
+| On a computer | What it does |
+| --- | --- |
+| Click, or Enter | Open the folder or file |
+| Tick box, Ctrl + click, Shift + click | Select (Shift selects a range); while anything is selected, clicks add or remove items |
+| Right-click | Menu for the item, or for everything selected |
+| Ctrl + mouse wheel, or the slider | Make thumbnails bigger or smaller |
+| Arrow keys | Move the selection |
+| Ctrl + A / Esc | Select everything / clear the selection |
+| F2 / Delete / Backspace | Rename / delete / go up one folder |
+
+To see one account on its own, click it in the storage panel (or choose **Show only this account** from its menu). While it is chosen, uploads and new folders go to that account. Click it again, or **Show all accounts**, to go back.
+
+On a phone, tap to open. Tick a box (or long-press on Android) to start selecting; after that, taps add to the selection.
+
+In the photo viewer: scroll or pinch to zoom, drag to move around, double-click to zoom in and back out, and use the arrows (or swipe) for the next and previous picture.
+
+## Face ID lock
+
+In the storage panel, choose **Face ID lock** (it says Touch ID, fingerprint or Windows Hello on other devices), then **Set up … on this device**. From then on that device:
+
+- unlocks DrivePool with Face ID instead of the password (the password always works too);
+- locks itself after 5 minutes without use, and asks again when you come back.
+
+Devices that only use the password keep working as before. A device can be removed from the same box, for example if a phone is lost.
+
+## Google Photos
+
+Google does not let outside apps browse a whole Google Photos library, so DrivePool offers two ways in (the **Google Photos** button in the storage panel, or the menu next to each account):
+
+- **Open Google Photos** opens photos.google.com for that account in a new tab.
+- **View here** opens Google's photo picker. The photos and videos you choose appear in DrivePool with thumbnails, zoom and download. Google only allows this for about an hour; after that, pick them again. Nothing is copied, so no extra space is used.
+
+One-time setup for **View here**:
+
+1. In Google Cloud Console, search for **Google Photos Picker API** and click **Enable**.
+2. Deploy the new version (`npm run deploy`).
+3. In DrivePool, choose **View here** for each account. The first time, it sends you to Google: pick the same account and tick the Google Photos box.
+
 ## Things to know
 
 - **A file has to fit inside one account.** With 15 GB accounts no single file can be larger than the free space of your emptiest account. Files are not split across accounts.

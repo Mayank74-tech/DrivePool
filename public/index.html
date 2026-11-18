@@ -17,12 +17,15 @@
       <img src="/icon.svg" alt="" width="56" height="56">
       <h1>DrivePool</h1>
       <p class="muted" id="login-hint">All your Google Drive space in one place.</p>
+      <button class="btn primary" id="passkey-btn" type="button" hidden>Unlock with Face ID</button>
+      <p class="or muted small" id="passkey-or" hidden><span>or use your password</span></p>
       <label class="field">
         <span>Password</span>
         <input id="login-pw" type="password" autocomplete="current-password" required>
       </label>
       <p class="error" id="login-error" role="alert" hidden></p>
       <button class="btn primary" id="login-btn" type="submit">Sign in</button>
+      <p class="muted small"><a href="/privacy">Privacy policy</a></p>
     </form>
   </main>
 
@@ -44,15 +47,19 @@
       <div class="backdrop" id="backdrop"></div>
       <section class="main" aria-label="Files">
         <nav class="crumbs" id="crumbs" aria-label="Folder path"></nav>
-        <div class="toolbar" id="toolbar"></div>
         <div id="notices"></div>
+        <div class="bars">
+          <div class="toolbar" id="toolbar"></div>
+          <div class="viewbar" id="viewbar" hidden></div>
+        </div>
         <div class="list-head" id="list-head"></div>
         <div class="list" id="list"></div>
       </section>
     </div>
   </div>
 
-  <input type="file" id="file-input" multiple hidden>
+  <!-- Kept in the page but out of sight: some Android browsers ignore a file picked through a fully hidden input. -->
+  <input type="file" id="file-input" class="file-input" multiple tabindex="-1" aria-hidden="true">
   <div class="drop" id="drop" hidden><div>Drop files to upload here</div></div>
   <section class="uploads" id="uploads" aria-label="Uploads" hidden></section>
   <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
