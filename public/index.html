@@ -9,6 +9,10 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="DrivePool">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -25,6 +29,9 @@
       </label>
       <p class="error" id="login-error" role="alert" hidden></p>
       <button class="btn primary" id="login-btn" type="submit">Sign in</button>
+      <div class="login-features" aria-hidden="true">
+        <span>One pool of storage</span><span>Every account</span><span>Any device</span>
+      </div>
       <p class="muted small"><a href="/privacy">Privacy policy</a></p>
     </form>
   </main>

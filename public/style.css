@@ -1472,3 +1472,415 @@ button.acct-info:hover .acct-email {
   display: grid;
   justify-items: start;
 }
+
+/* ==========================================================================
+   Visual refresh: softer surfaces, gradient accents, colour-coded files
+   ========================================================================== */
+
+:root {
+  --grad: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+  --glow: rgba(37, 99, 235, 0.35);
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05), 0 2px 8px rgba(16, 24, 40, 0.06);
+  --ring: 0 0 0 4px rgba(37, 99, 235, 0.18);
+  --folder: #f0a92b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grad: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    --glow: rgba(99, 102, 241, 0.45);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.35);
+    --ring: 0 0 0 4px rgba(107, 156, 255, 0.22);
+    --folder: #f5b544;
+  }
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- buttons and inputs */
+
+.btn {
+  border-radius: 12px;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s, filter 0.15s;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn.primary {
+  background: var(--grad);
+  color: #fff;
+  box-shadow: 0 8px 20px -10px var(--glow);
+}
+
+.btn.primary:hover {
+  filter: brightness(1.08);
+  background: var(--grad);
+}
+
+.field input:focus,
+.search input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--ring);
+}
+
+/* ---------- sign-in screen */
+
+.login {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(55% 45% at 12% 8%, rgba(37, 99, 235, 0.22), transparent 70%),
+    radial-gradient(50% 45% at 92% 92%, rgba(124, 58, 237, 0.2), transparent 70%),
+    var(--bg);
+}
+
+.login-card {
+  width: min(400px, 100%);
+  gap: 16px;
+  padding: 36px 28px 26px;
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 30px 80px -32px rgba(16, 24, 40, 0.45);
+  animation: rise 0.45s ease both;
+}
+
+.login-card > img {
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  box-shadow: 0 14px 34px -10px var(--glow);
+}
+
+.login-card h1 {
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+#login-hint {
+  margin-top: -6px;
+}
+
+#login-btn,
+#passkey-btn {
+  min-height: 50px;
+  font-size: 16px;
+}
+
+/* Face ID first, password second: the password button is the quieter one when both show. */
+#passkey-btn:not([hidden]) ~ #login-btn {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
+.login-features {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.login-features span {
+  padding: 4px 10px;
+  border-radius: 99px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------- top bar */
+
+.topbar {
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  -webkit-backdrop-filter: saturate(1.5) blur(16px);
+  backdrop-filter: saturate(1.5) blur(16px);
+}
+
+.brand img {
+  border-radius: 9px;
+  box-shadow: 0 6px 16px -8px var(--glow);
+}
+
+.brand span {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.01em;
+}
+
+.bars {
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* ---------- storage panel */
+
+.total {
+  gap: 8px;
+  padding: 18px;
+  border: 1.5px solid transparent;
+  border-radius: 18px;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--grad) border-box;
+  box-shadow: 0 16px 36px -24px var(--glow);
+}
+
+.total-free {
+  font-size: 32px;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.total-free span {
+  -webkit-text-fill-color: var(--muted);
+}
+
+.segbar {
+  height: 12px;
+}
+
+.acct {
+  align-items: center;
+  gap: 12px;
+  padding: 10px 6px 10px 8px;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.acct:hover {
+  background: var(--surface);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+}
+
+.acct .meter {
+  height: 6px;
+}
+
+/* ---------- path and toolbar */
+
+.crumb.current {
+  font-size: 22px;
+  font-weight: 750;
+  letter-spacing: -0.015em;
+}
+
+.toolbar.banner {
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.notice {
+  border-radius: 14px;
+}
+
+.seg {
+  border-radius: 12px;
+}
+
+/* ---------- tiles */
+
+.list.grid {
+  gap: 8px;
+  border-top: 0;
+  padding-top: 6px;
+}
+
+.tile {
+  padding: 8px 8px 10px;
+  border-radius: 16px;
+  transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.tile:hover {
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.tile.selected {
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-sm);
+}
+
+.tile-art {
+  border-radius: 12px;
+}
+
+.tile-art .thumb {
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.tile-art .glyph {
+  border-radius: 12px;
+  background: color-mix(in srgb, currentColor 9%, var(--surface));
+}
+
+.tile-art .glyph.is-folder {
+  background: none;
+}
+
+.tile-art .glyph .icon {
+  width: 46%;
+  height: 46%;
+}
+
+.tile-name {
+  font-weight: 500;
+}
+
+.tile .check,
+.tile > .icon-btn {
+  box-shadow: var(--shadow-sm);
+}
+
+/* Small file-type label (PDF, DOCX, ZIP...) on tiles that have no picture. */
+.ext {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--ext, #64748b);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+/* ---------- file type colours (icons in tiles and in the details list) */
+
+.glyph.is-folder {
+  color: var(--folder);
+}
+
+.glyph.is-folder svg {
+  fill: color-mix(in srgb, var(--folder) 30%, transparent);
+}
+
+.k-pdf { --ext: #e5484d; }
+.k-doc { --ext: #2f6fec; }
+.k-sheet { --ext: #16a34a; }
+.k-slide { --ext: #ea7a14; }
+.k-zip { --ext: #a0782c; }
+.k-video { --ext: #8b5cf6; }
+.k-audio { --ext: #db2777; }
+.k-image { --ext: #0891b2; }
+.k-code { --ext: #475569; }
+.k-text,
+.k-file { --ext: #64748b; }
+
+@media (prefers-color-scheme: dark) {
+  .k-code,
+  .k-text,
+  .k-file { --ext: #7c8aa0; }
+}
+
+.glyph:not(.is-folder) {
+  color: var(--ext, var(--muted));
+}
+
+.row .glyph:not(.is-folder) {
+  background: color-mix(in srgb, var(--ext, #64748b) 13%, var(--surface));
+}
+
+.row .glyph.is-folder {
+  background: color-mix(in srgb, var(--folder) 14%, var(--surface));
+}
+
+.tile-art .glyph:not(.is-folder) {
+  background: color-mix(in srgb, var(--ext, #64748b) 10%, var(--surface));
+}
+
+/* ---------- details list */
+
+.row {
+  border-radius: 12px;
+}
+
+/* ---------- empty states, menus, uploads */
+
+.empty > .icon {
+  padding: 18px;
+  background: var(--grad);
+  color: #fff;
+  box-shadow: 0 14px 30px -14px var(--glow);
+}
+
+.menu,
+.uploads,
+.dialog {
+  border-radius: 18px;
+}
+
+.menu-item {
+  border-radius: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card {
+    animation: none;
+  }
+}
+
+/* Account rows: the name area takes the remaining width (avatar and menu sit beside it). */
+button.acct-info {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+}
+
+.tile-art .glyph.is-folder svg,
+.row .glyph.is-folder svg {
+  fill: color-mix(in srgb, var(--folder) 30%, transparent);
+}
+
+/* Long email addresses shorten with "…" instead of widening the storage panel. */
+.sidebar,
+.accts {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.sidebar {
+  overflow-x: hidden;
+}

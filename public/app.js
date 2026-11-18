@@ -220,7 +220,7 @@ function renderSidebar() {
     h(
       'li',
       { class: `acct${state.only === a.id ? ' active' : state.only ? ' dimmed' : ''}` },
-      dot(a.id),
+      avatar(a),
       h(
         'button',
         {
@@ -711,6 +711,37 @@ function refreshList() {
   renderSelection();
 }
 
+// Colour family for a file, so PDFs, documents, sheets, videos... are recognisable at a glance.
+function kindOf(it) {
+  if (it.kind === 'folder') return 'folder';
+  const m = it.mimeType || '';
+  const ext = (it.name.match(/\.([a-z0-9]{1,5})$/i)?.[1] || '').toLowerCase();
+  if (m === 'application/pdf' || ext === 'pdf') return 'pdf';
+  if (/document|msword|vnd.google-apps.document|rtf/.test(m) || /^(docx?|odt|rtf|pages)$/.test(ext)) return 'doc';
+  if (/sheet|excel|csv|vnd.google-apps.spreadsheet/.test(m) || /^(xlsx?|ods|csv|numbers)$/.test(ext)) return 'sheet';
+  if (/presentation|powerpoint|vnd.google-apps.presentation/.test(m) || /^(pptx?|odp|key)$/.test(ext)) return 'slide';
+  if (/zip|compressed|tar|rar|7z/.test(m) || /^(zip|rar|7z|tar|gz|tgz)$/.test(ext)) return 'zip';
+  if (m.startsWith('video/')) return 'video';
+  if (m.startsWith('audio/')) return 'audio';
+  if (m.startsWith('image/')) return 'image';
+  if (/^(js|ts|py|java|c|cpp|cs|go|rs|html|css|json|xml|sh|dart|kt|swift)$/.test(ext)) return 'code';
+  if (m.startsWith('text/') || /^(txt|md|log)$/.test(ext)) return 'text';
+  return 'file';
+}
+
+const extLabel = (it) => {
+  if (it.kind === 'folder') return '';
+  const ext = it.name.match(/\.([a-z0-9]{1,5})$/i)?.[1];
+  if (ext) return ext.toUpperCase();
+  return { doc: 'DOC', sheet: 'SHEET', slide: 'SLIDES' }[kindOf(it)] || '';
+};
+
+function avatar(a) {
+  const el = h('span', { class: 'avatar', 'aria-hidden': 'true' }, (a.name || a.email || '?').trim()[0].toUpperCase());
+  el.style.background = acctColor(a.id);
+  return el;
+}
+
 function typeIcon(it) {
   if (it.kind === 'folder') return 'folder';
   const type = it.mimeType.split('/')[0];
@@ -719,7 +750,7 @@ function typeIcon(it) {
 
 // A thumbnail when Google has one, otherwise an icon for the kind of file.
 function visual(it, size) {
-  const glyph = h('span', { class: `glyph ${it.kind === 'folder' ? 'is-folder' : ''}` }, icon(typeIcon(it)));
+  const glyph = h('span', { class: `glyph k-${kindOf(it)} ${it.kind === 'folder' ? 'is-folder' : ''}` }, icon(typeIcon(it)));
   if (it.kind !== 'file' || !it.thumb) return glyph;
   const img = h('img', { class: 'thumb', alt: '', loading: 'lazy', src: thumbUrl(it, size) });
   img.draggable = false;
@@ -782,6 +813,7 @@ function tile(it) {
       { class: 'tile-art' },
       visual(it, thumbSize(state.tile)),
       isVideo(it) && it.thumb && h('span', { class: 'play' }, icon('video')),
+      it.kind === 'file' && !it.thumb && extLabel(it) && h('span', { class: `ext k-${kindOf(it)}` }, extLabel(it)),
       h('span', { class: 'tile-accts' }, acctsOf(it).map(dot)),
     ),
     h('div', { class: 'tile-name' }, it.name),
@@ -1908,7 +1940,7 @@ function renderUploads() {
 
 // ---------------------------------------------------------------- sign-in and start-up
 
-function showLogin(message) {
+function showLogin(message, auto = false) {
   $('#shell').hidden = true;
   $('#login').hidden = false;
   document.querySelectorAll('dialog[open]').forEach((d) => d.close(''));
@@ -1918,8 +1950,45 @@ function showLogin(message) {
   $('#passkey-btn').hidden = $('#passkey-or').hidden = !canPasskey;
   $('#passkey-btn').textContent = `Unlock with ${bioName()}`;
   // On a Face ID device, the Face ID button comes first; typing the password is the fallback.
-  if (canPasskey && prefs.get('lock', false)) $('#passkey-btn').focus();
+  if (canPasskey && (prefs.get('lock', false) || isHomeScreenApp())) $('#passkey-btn').focus();
   else $('#login-pw').focus();
+  if (auto && canPasskey && (prefs.get('lock', false) || isHomeScreenApp())) setTimeout(() => unlockNow(true), 250);
+}
+
+// Opened from the Home Screen icon (rather than a browser tab).
+const isHomeScreenApp = () => navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+
+// A "launch" lasts until the app is closed (swiped away) or the tab is closed.
+const launchFlag = {
+  get: () => { try { return sessionStorage.getItem('dp.live') === '1'; } catch { return false; } },
+  set: () => { try { sessionStorage.setItem('dp.live', '1'); } catch {} },
+};
+
+let unlocking = false;
+// Asks for Face ID. If it fails, is cancelled or is not available, the password box is ready instead.
+async function unlockNow(auto) {
+  if (unlocking) return;
+  unlocking = true;
+  const err = $('#login-error');
+  const button = $('#passkey-btn');
+  err.hidden = true;
+  button.disabled = true;
+  try {
+    await unlockWithPasskey();
+    enterApp();
+  } catch (ex) {
+    const cancelled = ex?.name === 'NotAllowedError';
+    if (!(auto && cancelled)) {
+      err.textContent = ex.message === 'Failed to fetch' ? 'No connection. Try again.' : passkeyError(ex);
+      err.hidden = false;
+    } else {
+      // Face ID was refused, cancelled, or the browser wanted a tap first.
+      $('#login-hint').textContent = `Tap "Unlock with ${bioName()}", or type your password.`;
+    }
+    $('#login-pw').focus();
+  }
+  button.disabled = false;
+  unlocking = false;
 }
 
 // ---------------------------------------------------------------- Face ID and other passkeys
@@ -2091,6 +2160,7 @@ async function signOut() {
 }
 
 function enterApp() {
+  launchFlag.set();
   $('#login').hidden = true;
   $('#shell').hidden = false;
   const params = new URLSearchParams(location.search);
@@ -2129,27 +2199,14 @@ function wire() {
     button.disabled = false;
   });
 
-  $('#passkey-btn').addEventListener('click', async () => {
-    const err = $('#login-error');
-    const button = $('#passkey-btn');
-    err.hidden = true;
-    button.disabled = true;
-    try {
-      await unlockWithPasskey();
-      enterApp();
-    } catch (ex) {
-      err.textContent = ex.message === 'Failed to fetch' ? 'No connection. Try again.' : passkeyError(ex);
-      err.hidden = false;
-    }
-    button.disabled = false;
-  });
+  $('#passkey-btn').addEventListener('click', () => unlockNow(false));
 
   // Coming back to DrivePool after a while: if this device has locked, show the lock screen
   // straight away instead of the files.
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState !== 'visible' || $('#shell').hidden) return;
     const me = await fetch('/api/me').then((r) => r.json()).catch(() => null);
-    if (me && me.configured && !me.authed) showLogin(me.locked ? LOCKED_MESSAGE : undefined);
+    if (me && me.configured && !me.authed) showLogin(me.locked ? LOCKED_MESSAGE : undefined, !!me.locked);
   });
 
   $('#home-link').addEventListener('click', (e) => {
@@ -2273,7 +2330,12 @@ async function init() {
     return showLogin(`Setup is not finished. Still missing: ${me.missing.join(', ')}. See README.md.`);
   }
   state.hasPasskeys = !!me.passkeys;
-  if (!me.authed) return showLogin(me.locked ? LOCKED_MESSAGE : undefined);
+  if (me.authed && me.passkeys && prefs.get('lock', false) && !launchFlag.get()) {
+    // Opened fresh (e.g. after swiping the app away): always ask for Face ID first.
+    await fetch('/api/lock', { method: 'POST' }).catch(() => {});
+    return showLogin('Unlock DrivePool to continue.', true);
+  }
+  if (!me.authed) return showLogin(me.locked ? LOCKED_MESSAGE : undefined, true);
   enterApp();
 }
 

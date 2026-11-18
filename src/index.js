@@ -107,6 +107,11 @@ async function route(req, env, url, ctx) {
   if (!authed) throw new HttpError(401, locked ? 'DrivePool is locked' : 'Not signed in', { locked });
   if (session.lock) ctx.cookie = await sessionCookieFor(env, url, true, session.exp);
 
+  // Locks this device's session now (the app does this each time it is started fresh on a Face ID device).
+  if (path === '/lock' && method === 'POST') {
+    ctx.cookie = await sessionCookieFor(env, url, true, session.exp, 1);
+    return json({ ok: true });
+  }
   if (path === '/passkeys' && isGet) return json({ passkeys: await passkeyList(env) });
   if (path === '/passkey/register-options' && method === 'POST') return json(await passkeyRegisterOptions(env, url));
   if (path === '/passkey/register' && method === 'POST') {
@@ -213,8 +218,8 @@ async function sessionOf(req, env) {
   return { exp: Number(exp), lock: flag === 'L', idle: Number(idle) || 0 };
 }
 
-async function sessionCookieFor(env, url, lock, exp = Date.now() + SESSION_SECONDS * 1000) {
-  const payload = lock ? `s:${exp}:L:${Date.now() + lockAfterMs(env)}` : `s:${exp}`;
+async function sessionCookieFor(env, url, lock, exp = Date.now() + SESSION_SECONDS * 1000, unlockedUntil = Date.now() + lockAfterMs(env)) {
+  const payload = lock ? `s:${exp}:L:${unlockedUntil}` : `s:${exp}`;
   const maxAge = Math.max(0, Math.floor((exp - Date.now()) / 1000));
   return sessionCookie(await sign(env, payload), maxAge, url);
 }
