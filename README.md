@@ -88,6 +88,10 @@ Files open in a thumbnail view that works like a desktop file manager. The butto
 
 To see one account on its own, click it in the storage panel (or choose **Show only this account** from its menu). While it is chosen, uploads and new folders go to that account. Click it again, or **Show all accounts**, to go back.
 
+To choose where new files go, use the **To: Automatic** button next to Upload. **Automatic** picks the account with the most free space; choosing an account sends every new upload, drag-and-drop and new folder there until you change it back. The choice is remembered on each device.
+
+To keep an account out of new uploads (for example one you want to keep free for Gmail), open its menu and choose **Stop uploads to this account**. Its files stay visible and usable; new files and folders just go to the other accounts. **Allow uploads to this account** turns it back on.
+
 On a phone, tap to open. Tick a box (or long-press on Android) to start selecting; after that, taps add to the selection.
 
 In the photo viewer: scroll or pinch to zoom, drag to move around, double-click to zoom in and back out, and use the arrows (or swipe) for the next and previous picture.

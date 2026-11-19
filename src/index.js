@@ -71,6 +71,7 @@ const POST_ROUTES = {
   '/upload/token': uploadToken,
   '/accounts/remove': removeAccount,
   '/accounts/empty-trash': emptyTrash,
+  '/accounts/uploads': setUploads,
   '/photos/session': photosSession,
   '/photos/poll': photosPoll,
   '/client-log': clientLog,
@@ -468,7 +469,7 @@ async function accountsWithQuota(env) {
   const accounts = await loadAccounts(env);
   return Promise.all(
     accounts.map(async (acct) => {
-      const info = { id: acct.id, email: acct.email, name: acct.name, photos: !!acct.photos };
+      const info = { id: acct.id, email: acct.email, name: acct.name, photos: !!acct.photos, noUpload: !!acct.noUpload };
       try {
         Object.assign(info, await quota(env, acct));
       } catch (e) {
@@ -504,7 +505,13 @@ async function pickAccount(env, size, pending = {}, only = null) {
   if (only) {
     all = all.filter((x) => x.info.id === only);
     if (!all.length) throw new HttpError(404, 'That account is not connected');
+    if (all[0].acct.noUpload) {
+      throw new HttpError(403, `Uploads to ${all[0].acct.email} are turned off. Turn them back on from that account's menu, or choose "Show all accounts".`);
+    }
   }
+  // Accounts with uploads turned off are never chosen for new files or folders.
+  all = all.filter((x) => !x.acct.noUpload);
+  if (!all.length) throw new HttpError(409, 'Uploads are turned off for every account. Turn them on for at least one account in the storage panel.');
   let best = null;
   let bestFree = -1;
   for (const x of all) {
@@ -539,6 +546,17 @@ async function removeAccount(env, body) {
   await env.KV.delete(`tok:${acct.id}`);
   tokenCache.delete(acct.id);
   return { ok: true };
+}
+
+// Turns uploads to one account on or off. Its files stay visible and usable either way.
+async function setUploads(env, body) {
+  const accounts = await loadAccounts(env);
+  const acct = accounts.find((a) => a.id === body.id);
+  if (!acct) throw new HttpError(404, 'That account is not connected');
+  if (body.allow) delete acct.noUpload;
+  else acct.noUpload = true;
+  await env.KV.put('accounts', JSON.stringify(accounts));
+  return { ok: true, noUpload: !!acct.noUpload };
 }
 
 async function emptyTrash(env, body) {

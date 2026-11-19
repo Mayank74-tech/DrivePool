@@ -37,6 +37,7 @@ const state = {
   uploadsCollapsed: false,
   view: prefs.get('view', 'grid') === 'details' ? 'details' : 'grid',
   tile: Math.min(320, Math.max(72, Number(prefs.get('tile', 128)) || 128)), // thumbnail width in px
+  uploadTo: prefs.get('uploadTo', null), // account chosen in "Upload to", or null for automatic
   visible: [], // items as currently shown, in order
   els: new Map(), // item -> its element
   anchor: null, // where a Shift-range starts
@@ -172,6 +173,8 @@ async function loadAccounts() {
   try {
     state.accounts = (await api('/api/accounts')).accounts;
     if (state.only && !state.accounts.some((a) => a.id === state.only)) state.only = null;
+    // A chosen upload account that was removed or had uploads turned off goes back to automatic.
+    if (state.uploadTo && !state.accounts.some((a) => a.id === state.uploadTo && !a.noUpload)) setUploadTo(null, true);
   } catch (e) {
     if (!state.accounts) state.accounts = [];
     toast(e.message, 'error');
@@ -237,6 +240,7 @@ function renderSidebar() {
               'div',
               { class: 'muted small' },
               a.limit == null ? `${fmtBytes(a.usage)} used, no limit` : `${fmtBytes(a.free)} free of ${fmtBytes(a.limit)}`,
+              a.noUpload && h('span', { class: 'badge-off', title: 'New uploads never go to this account' }, 'Uploads off'),
             ),
         !a.error && a.limit != null && meter(a.usage / a.limit, acctColor(a.id)),
       ),
@@ -252,6 +256,8 @@ function renderSidebar() {
           { class: 'total' },
           h('div', { class: 'total-free' }, fmtBytes(t.free), h('span', null, ' free')),
           h('div', { class: 'muted small' }, `${fmtBytes(t.usage)} used of ${fmtBytes(t.limit)} across ${plural(accts.length, 'account')}`),
+          t.counted.some((a) => a.noUpload) &&
+            h('div', { class: 'small upload-free' }, `${fmtBytes(t.counted.filter((a) => !a.noUpload).reduce((sum, a) => sum + a.free, 0))} of it can take new uploads`),
           seg,
         )
       : h('p', { class: 'muted' }, 'No Google accounts connected yet.'),
@@ -261,6 +267,16 @@ function renderSidebar() {
     h('p', { class: 'muted small note' }, 'Each account’s space is shared with its Gmail and Google Photos.'),
     h('div', { class: 'side-foot' }, btn(`${bioName()} lock`, passkeyDialog, 'quiet', 'lock'), btn('Sign out', signOut, 'quiet', 'logout')),
   );
+}
+
+async function setUploads(a, allow) {
+  try {
+    await api('/api/accounts/uploads', { id: a.id, allow });
+    toast(allow ? `Uploads to ${a.email} are on again` : `New uploads will not go to ${a.email}. Its files stay as they are.`);
+    await loadAccounts();
+  } catch (e) {
+    toast(e.message, 'error');
+  }
 }
 
 function connectAccount() {
@@ -278,6 +294,11 @@ function accountMenu(anchor, a) {
     state.only === a.id
       ? { icon: 'storage', label: 'Show all accounts', run: () => setOnly(null) }
       : { icon: 'eye', label: 'Show only this account', run: () => setOnly(a.id) },
+    {
+      icon: a.noUpload ? 'upload' : 'lock',
+      label: a.noUpload ? 'Allow uploads to this account' : 'Stop uploads to this account',
+      run: () => setUploads(a, !!a.noUpload),
+    },
     { icon: 'image', label: 'Open Google Photos', run: () => openGooglePhotos(a) },
     !a.error && { icon: 'eye', label: 'View Google Photos here', run: () => pickPhotos(a) },
     !a.error && {
@@ -512,9 +533,17 @@ function renderToolbar() {
   }
   const noAccounts = !state.accounts?.length;
   const upload = btn('Upload', (e) => chooseUpload(e.currentTarget), 'primary', 'upload');
-  const folder = btn('New folder', newFolder, '', 'folderPlus');
-  upload.disabled = folder.disabled = noAccounts;
-  bar.replaceChildren(upload, folder, h('span', { class: 'grow' }), iconBtn('refresh', 'Refresh', refreshAll));
+  const folder = btn('New folder', newFolder, 'new-folder', 'folderPlus');
+  folder.setAttribute('aria-label', 'New folder');
+  const onlyAcct = state.only && (state.accounts || []).find((x) => x.id === state.only);
+  const allOff = !!state.accounts?.length && state.accounts.every((x) => x.noUpload);
+  upload.disabled = folder.disabled = noAccounts || !!onlyAcct?.noUpload || allOff;
+  if (onlyAcct?.noUpload) upload.title = folder.title = 'Uploads to this account are turned off (see its menu)';
+  else if (allOff) upload.title = folder.title = 'Uploads are turned off for every account';
+  // "Upload to": automatic (most free space) or one chosen account. Hidden while showing only
+  // one account, because then that account is the destination anyway.
+  const dest = !state.only && !noAccounts && destButton();
+  bar.replaceChildren(upload, folder, dest, h('span', { class: 'grow' }), iconBtn('refresh', 'Refresh', refreshAll));
 }
 
 // On phones a plain file picker often opens only the photo gallery, so PDFs and other
@@ -530,6 +559,55 @@ function chooseUpload(anchor) {
   openMenu(anchor, [
     { icon: 'image', label: 'Photos & videos', run: () => pickFiles('image/*,video/*') },
     { icon: 'file', label: 'Files (PDF, documents, anything)', run: () => pickFiles('*/*') },
+  ]);
+}
+
+// Where new uploads and folders go: the account being shown on its own, else the one picked
+// in "Upload to", else automatic (null).
+const uploadTarget = () => state.only || state.uploadTo || null;
+
+function setUploadTo(id, quiet = false) {
+  state.uploadTo = id;
+  prefs.set('uploadTo', id);
+  if (!quiet) toast(id ? `New uploads will go to ${acctEmail(id)}` : 'New uploads go to the account with the most free space');
+  renderToolbar();
+}
+
+function destButton() {
+  const chosen = state.uploadTo && (state.accounts || []).find((a) => a.id === state.uploadTo);
+  const label = chosen ? chosen.email.split('@')[0] : 'Automatic';
+  const b = h(
+    'button',
+    {
+      class: 'btn dest',
+      type: 'button',
+      title: chosen ? `New uploads go to ${chosen.email}` : 'New uploads go to the account with the most free space',
+      'aria-label': `Upload to: ${chosen ? chosen.email : 'automatic'}`,
+      onclick: (e) => destMenu(e.currentTarget),
+    },
+    chosen ? dot(chosen.id) : icon('storage'),
+    h('span', { class: 'dest-label' }, h('span', { class: 'muted' }, 'To: '), label),
+    icon('chevronDown'),
+  );
+  return b;
+}
+
+function destMenu(anchor) {
+  const tick = (on) => (on ? 'check' : 'blank');
+  openMenu(anchor, [
+    { icon: tick(!state.uploadTo), label: 'Automatic (most free space)', run: () => setUploadTo(null) },
+    ...(state.accounts || []).map((a) => ({
+      icon: tick(state.uploadTo === a.id),
+      label: a.noUpload
+        ? `${a.email} · uploads off`
+        : a.error
+          ? `${a.email} · not reachable`
+          : `${a.email} · ${a.limit == null ? 'no limit' : `${fmtBytes(a.free)} free`}`,
+      run: () =>
+        a.noUpload
+          ? toast(`Uploads to ${a.email} are turned off. Turn them on from its menu first.`, 'error')
+          : setUploadTo(a.id),
+    })),
   ]);
 }
 
@@ -554,7 +632,13 @@ function renderNotices() {
         'div',
         { class: 'notice info' },
         dot(state.only),
-        h('span', { class: 'grow' }, `Showing only ${acctEmail(state.only)}. New uploads and folders go to this account.`),
+        h(
+          'span',
+          { class: 'grow' },
+          (state.accounts || []).find((x) => x.id === state.only)?.noUpload
+            ? `Showing only ${acctEmail(state.only)}. Uploads to this account are turned off.`
+            : `Showing only ${acctEmail(state.only)}. New uploads and folders go to this account.`,
+        ),
         btn('Show all accounts', () => setOnly(null)),
       ),
     );
@@ -1191,7 +1275,7 @@ async function newFolder() {
   const name = await ask({ title: 'New folder', label: 'Folder name', action: 'Create' });
   if (!name) return;
   try {
-    await api('/api/mkdir', { name, chain: chainOf(state.stack), acct: state.only || undefined });
+    await api('/api/mkdir', { name, chain: chainOf(state.stack), acct: uploadTarget() || undefined });
   } catch (e) {
     toast(e.message, 'error');
   }
@@ -1687,7 +1771,7 @@ function queueUploads(files) {
   }
   const stack = state.stack.map((s) => ({ ...s }));
   for (const file of files) {
-    state.uploads.push({ file, name: file.name, size: file.size, sent: 0, status: 'queued', stack, only: state.only });
+    state.uploads.push({ file, name: file.name, size: file.size, sent: 0, status: 'queued', stack, only: uploadTarget() });
   }
   state.uploadsCollapsed = false;
   renderUploads();
